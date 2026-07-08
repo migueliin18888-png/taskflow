@@ -28,57 +28,175 @@ taskflow-project/
 │   │   ├── routes/           # Definición de endpoints de la API
 │   │   ├── types/            # Tipos e interfaces compartidas
 │   │   └── server.ts         # Punto de entrada de Node.js
+│   ├── .env.example
 │   ├── package.json
 │   └── tsconfig.json
 └── frontend/
     ├── index.html
     ├── src/
     │   ├── ts/                # Lógica en TypeScript para el cliente
-    │   │   ├── api.ts         # Cliente fetch centralizado
-    │   │   ├── auth.ts        # Login / registro
-    │   │   ├── kanban.ts      # Renderizado y drag & drop del tablero
-    │   │   ├── tasks.ts       # Llamadas CRUD a la API
-    │   │   ├── ui.ts          # Validaciones y notificaciones
-    │   │   ├── types.ts       # Tipos compartidos
-    │   │   └── main.ts        # Punto de entrada
-    │   └── css/
-    │       └── styles.css     # Estilos responsive
-    └── package.json
+    │   └── css/               # Estilos responsive
+    ├── package.json
+    └── tsconfig.json
 ```
 
-> Nota: `index.html` se ubica en la raíz de `frontend/` (convención estándar
-> de Vite) en lugar de `frontend/public/`, para que Vite pueda resolver los
-> módulos de `src/` correctamente. La carpeta `public/` queda disponible para
-> assets estáticos (favicon, imágenes, etc.).
+---
 
-## 🚀 Puesta en marcha
+## 🚀 Cómo correr este proyecto en una PC nueva (desde cero)
 
-### 1. Requisitos previos
-- Node.js 18+
-- Una instancia de MongoDB corriendo localmente (`mongodb://127.0.0.1:27017`)
-  o una cadena de conexión de [MongoDB Atlas](https://www.mongodb.com/atlas).
+Sigue estos pasos **en orden**. Están escritos para Linux (Fedora/Ubuntu),
+con notas para macOS y Windows donde aplica.
 
-### 2. Backend
+### Paso 1 — Instalar Git (si no lo tienes)
+
+```bash
+# Fedora
+sudo dnf install git -y
+
+# Ubuntu/Debian
+sudo apt install git -y
+```
+
+Windows: descarga e instala [Git for Windows](https://git-scm.com/download/win).
+macOS: `brew install git` (con [Homebrew](https://brew.sh)).
+
+### Paso 2 — Instalar Node.js (versión 18 o superior)
+
+Recomendado usar `nvm` (Node Version Manager), funciona igual en Linux/macOS:
+
+```bash
+curl -o- https://raw.githubusercontent.com/nvm-sh/nvm/v0.39.7/install.sh | bash
+source ~/.bashrc
+nvm install --lts
+node -v   # confirma que sea v18+ o v20+
+npm -v
+```
+
+Windows: descarga el instalador `.msi` desde [nodejs.org](https://nodejs.org)
+(elige la versión LTS).
+
+### Paso 3 — Instalar y arrancar MongoDB
+
+**Opción A (recomendada si no quieres instalar nada localmente):** crea una
+base de datos gratuita en [MongoDB Atlas](https://www.mongodb.com/atlas) y
+copia la cadena de conexión que te den (algo como
+`mongodb+srv://usuario:clave@cluster0.xxxxx.mongodb.net/taskflow`). Sáltate el
+resto de este paso y úsala en el `.env` más abajo.
+
+**Opción B (MongoDB local en Fedora):**
+```bash
+sudo tee /etc/yum.repos.d/mongodb-org-7.0.repo <<'EOF'
+[mongodb-org-7.0]
+name=MongoDB Repository
+baseurl=https://repo.mongodb.org/yum/redhat/9/mongodb-org/7.0/x86_64/
+gpgcheck=1
+enabled=1
+gpgkey=https://pgp.mongodb.com/server-7.0.asc
+EOF
+
+sudo dnf install mongodb-org -y
+sudo systemctl enable --now mongod
+systemctl status mongod   # debe decir "active (running)"
+```
+
+**MongoDB local en Ubuntu/Debian:** sigue la [guía oficial](https://www.mongodb.com/docs/manual/tutorial/install-mongodb-on-ubuntu/).
+
+**MongoDB local en macOS:**
+```bash
+brew tap mongodb/brew
+brew install mongodb-community
+brew services start mongodb-community
+```
+
+**MongoDB local en Windows:** descarga el instalador desde
+[mongodb.com/try/download/community](https://www.mongodb.com/try/download/community)
+y sigue el asistente (incluye la opción de instalarlo como servicio).
+
+### Paso 4 — Clonar el repositorio
+
+```bash
+git clone https://github.com/migueliin18888-png/taskflow.git
+cd taskflow
+```
+
+### Paso 5 — Configurar y levantar el backend
 
 ```bash
 cd backend
 npm install
-cp .env.example .env      # y edita las variables si es necesario
-npm run dev                # levanta el servidor en http://localhost:4000
+cp .env.example .env
 ```
 
-### 3. Frontend
+Abre el archivo `.env` con un editor de texto y revisa las variables:
 
-En otra terminal:
+```env
+PORT=4000
+MONGODB_URI=mongodb://127.0.0.1:27017/taskflow
+JWT_SECRET=cambia_este_valor_por_un_secreto_seguro
+JWT_EXPIRES_IN=1d
+CLIENT_ORIGIN=http://localhost:5173
+```
+
+- Si usas **MongoDB local**, deja `MONGODB_URI` tal cual.
+- Si usas **MongoDB Atlas**, reemplaza `MONGODB_URI` con la cadena de conexión
+  que te dio Atlas.
+- Cambia `JWT_SECRET` por cualquier texto largo y aleatorio (es la clave que
+  firma las sesiones).
+
+Levanta el servidor:
 
 ```bash
-cd frontend
-npm install
-npm run dev                # levanta la app en http://localhost:5173
+npm run dev
 ```
 
-Abre `http://localhost:5173` en el navegador. Regístrate, inicia sesión y
-empieza a crear tareas en el tablero Kanban.
+Debe mostrar:
+```
+✅ Conectado a MongoDB correctamente.
+🚀 Servidor TaskFlow corriendo en http://localhost:4000
+```
+
+**Deja esta terminal abierta** — el backend debe seguir corriendo mientras usas la app.
+
+### Paso 6 — Configurar y levantar el frontend
+
+Abre **una terminal nueva** (no cierres la del backend) y ejecuta:
+
+```bash
+cd taskflow/frontend
+npm install
+npm run dev
+```
+
+Debe mostrar algo como:
+```
+VITE v5.x.x  ready in ... ms
+➜  Local:   http://localhost:5173/
+```
+
+### Paso 7 — Usar la aplicación
+
+Abre tu navegador en:
+
+```
+http://localhost:5173
+```
+
+Regístrate desde la pestaña "Crear cuenta", inicia sesión y empieza a crear
+tareas en el tablero Kanban (puedes arrastrarlas entre columnas).
+
+---
+
+## 🔎 Verificación rápida (troubleshooting)
+
+| Comprobación | Comando | Resultado esperado |
+|---|---|---|
+| ¿Mongo está corriendo? | `systemctl status mongod` | `active (running)` |
+| ¿El backend responde? | Abrir `http://localhost:4000/api/health` en el navegador | `{"status":"ok",...}` |
+| ¿Hay datos guardados? | `mongosh --eval "use taskflow; db.users.find()"` | Lista de usuarios registrados |
+
+Si al registrarte ves un error de tipo `NetworkError`, confirma que **ambas
+terminales** (backend y frontend) sigan abiertas y corriendo sin haber
+presionado `Ctrl+C`.
 
 ## 🔐 Endpoints de la API
 
@@ -107,6 +225,14 @@ empieza a crear tareas en el tablero Kanban.
   servidor (Mongoose + validaciones explícitas en los controladores).
 - **Diseño responsive**: el tablero pasa de 3 columnas a 1 columna en
   pantallas pequeñas.
+
+## ⚠️ Importante sobre seguridad
+
+- **Nunca subas tu archivo `.env`** a GitHub (ya está excluido en
+  `.gitignore`). Contiene secretos como `JWT_SECRET` y, si usas Atlas, tu
+  cadena de conexión con usuario/clave.
+- Si usas MongoDB Atlas, no compartas tu cadena de conexión completa en
+  capturas de pantalla ni en el código.
 
 ## 🧪 Próximos pasos sugeridos
 
